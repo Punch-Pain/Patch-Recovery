@@ -8,6 +8,9 @@ on:
         required: true
         default: 'https://files.catbox.moe/(RECOMMENDED)'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,21 +24,23 @@ jobs:
         sudo apt install git wget lz4 tar openssl python3 -y
 
     - name: Fetch image from URL
+      env:
+        IMG_URL: ${{ inputs.VENDOR_BOOT_URL }}
       run: |
         ls
         pwd
-        wget ${{ github.event.inputs.VENDOR_BOOT_URL }} -O vendor_boot.img
+        wget --progress=dot:giga "$IMG_URL" -O vendor_boot.img
 
     - name: Patch Process-1
       run: |
         chmod a+x script1.sh
         chmod a+x magiskboot
-        ./script1.sh vendor_boot.img || true
+        ./script1.sh vendor_boot.img
 
     - name: Patch Process-2
       run: |
         chmod a+x script2.sh
-        ./script2.sh || true
+        ./script2.sh
         mkdir output && cd output
         mv ../r-patched.img vendor_boot.img
         tar cvf fastbootd-vendor_boot.tar vendor_boot.img

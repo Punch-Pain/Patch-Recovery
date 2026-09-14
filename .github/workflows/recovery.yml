@@ -8,6 +8,9 @@ on:
         required: true
         default: 'https://files.catbox.moe/(RECOMMENDED)'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,21 +24,23 @@ jobs:
         sudo apt install git wget lz4 tar openssl python3 -y
 
     - name: Fetch image from URL
+      env:
+        IMG_URL: ${{ inputs.RECOVERY_URL }}
       run: |
         ls
         pwd
-        wget ${{ github.event.inputs.RECOVERY_URL }} -O recovery.img
+        wget --progress=dot:giga "$IMG_URL" -O recovery.img
 
     - name: Patch Process-1
       run: |
         chmod a+x script1.sh
         chmod a+x magiskboot
-        ./script1.sh recovery.img || true
+        ./script1.sh recovery.img
 
     - name: Patch Process-2
       run: |
         chmod a+x script2.sh
-        ./script2.sh || true
+        ./script2.sh
         python3 avbtool extract_public_key --key phh.pem --output phh.pub.bin
         python3 avbtool add_hash_footer --partition_name recovery --partition_size $(wc -c recovery.img |cut -f 1 -d ' ') --image recovery-patched.img --key phh.pem --algorithm SHA256_RSA4096
         mkdir output && cd output
